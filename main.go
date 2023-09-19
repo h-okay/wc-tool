@@ -5,55 +5,44 @@ import (
 	"os"
 
 	"github.com/urfave/cli/v2"
+
+	"cc/wc-tool/src"
 )
 
 func main() {
 	app := &cli.App{
-		Name:  "wc-tool",
-		Usage: "count bytes in a file",
+		Name:           "wc-tool",
+		Usage:          "count bytes in a file",
+		Description:    "A command-line tool for counting various metrics in a file.",
+		UsageText:      "wc-tool [OPTIONS] FILE",
+		ArgsUsage:      "FILE",
+		DefaultCommand: "",
+		Action:         countAction,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
-				Name:    "bytes",
-				Aliases: []string{"c"},
-				Usage:   "Print the byte count",
+				Name:               "bytes",
+				Aliases:            []string{"c"},
+				Usage:              "Print the byte count",
+				DisableDefaultText: true,
 			},
 			&cli.BoolFlag{
-				Name:    "lines",
-				Aliases: []string{"l"},
-				Usage:   "Print the line count",
+				Name:               "lines",
+				Aliases:            []string{"l"},
+				Usage:              "Print the line count",
+				DisableDefaultText: true,
 			},
 			&cli.BoolFlag{
-				Name:    "words",
-				Aliases: []string{"w"},
-				Usage:   "Print the words count",
+				Name:               "words",
+				Aliases:            []string{"w"},
+				Usage:              "Print the words count",
+				DisableDefaultText: true,
 			},
 			&cli.BoolFlag{
-				Name:    "chars",
-				Aliases: []string{"m"},
-				Usage:   "Print the chars count",
+				Name:               "chars",
+				Aliases:            []string{"m"},
+				Usage:              "Print the chars count",
+				DisableDefaultText: true,
 			},
-		},
-		DefaultCommand: "help",
-		Action: func(c *cli.Context) error {
-			filename := c.Args().First()
-			// Check if the --bytes or -c flag is set
-			if c.Bool("bytes") {
-				countAndPrint("bytes", filename)
-			}
-			// Check if the --lines or -l flag is set
-			if c.Bool("lines") {
-				countAndPrint("lines", filename)
-			}
-			// Check if the --words or -w flag is set
-			if c.Bool("words") {
-				countAndPrint("words", filename)
-			}
-			// Check if the --words or -w flag is set
-			if c.Bool("chars") {
-				countAndPrint("chars", filename)
-			}
-
-			return nil
 		},
 	}
 	err := app.Run(os.Args)
@@ -62,27 +51,33 @@ func main() {
 	}
 }
 
-func countAndPrint(mode string, filename string) {
-	switch mode {
-	case "bytes":
-		bytes, err := CountBytes(filename)
-		printCount(filename, "bytes", bytes, err)
-	case "lines":
-		lines, err := CountLines(filename)
-		printCount(filename, "lines", lines, err)
-	case "words":
-		words, err := CountWords(filename)
-		printCount(filename, "words", words, err)
-	case "chars":
-		chars, err := CountChars(filename)
-		printCount(filename, "chars", chars, err)
-	}
+func countAction(c *cli.Context) error {
+	filename := c.Args().First()
+	input := src.GetInput(filename)
+	activated := parseFlags(c.FlagNames(), c)
+	counts := src.GetCounts(activated, input)
+	output := src.GenerateOutput(filename, counts["lines"], counts["words"], counts["chars"], counts["bytes"])
+	fmt.Println(output)
+	return nil
 }
 
-func printCount(filename string, mode string, count int, err error) {
-	if err != nil {
-		fmt.Printf("Error counting words for file %s", filename)
-		panic(err)
+func parseFlags(givenFlags []string, c *cli.Context) map[string]bool {
+	availableFlagNames := []string{"bytes", "lines", "words", "chars"}
+	activated := make(map[string]bool, 4)
+
+	// No flags given, all activated
+	if len(givenFlags) == 0 {
+		for _, flagName := range availableFlagNames {
+			activated[flagName] = true
+		}
 	}
-	fmt.Printf("%d %s\n", count, filename)
+
+	// Only given flags activated
+	if len(givenFlags) > 0 {
+		for _, flag := range givenFlags {
+			activated[flag] = true
+		}
+	}
+
+	return activated
 }
