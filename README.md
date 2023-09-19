@@ -36,3 +36,7 @@ distributed Project Gutenberg™ eBooks with only a loose network of
 volunteer support.
 ```
 `CTRL+D` to stop input and get the results.
+
+**Usage**
+
+<a href="https://asciinema.org/a/608819?t=10" target="_blank"><img src="https://asciinema.org/a/608819.svg?t=10" width=500px/></a>
